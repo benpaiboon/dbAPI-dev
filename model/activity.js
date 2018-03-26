@@ -27,17 +27,10 @@ Activitys.prototype.getall = function (callback) {
 					} else {
 						callback('Not found!!', null);
 					};
-
-
 				}
 			});
-
-
-
 		}
 	});
-
-
 };
 
 Activitys.prototype.savetime = function (job_id, act_array, callback) {
@@ -75,23 +68,14 @@ Activitys.prototype.savetime = function (job_id, act_array, callback) {
 								callback(null, element);
 							})
 						}, this);
-
 					} else {
 						callback('Not found!!', null);
 					};
-
-
 				}
 			});
-
-
-
 		}
 	});
-
-
 };
-
 
 Activitys.prototype.getQrcode = function (CurrentUser, QrcodeText, callback) {
 	MongoClient.connect(this.url, function (err, db) {
@@ -136,13 +120,8 @@ Activitys.prototype.getQrcode = function (CurrentUser, QrcodeText, callback) {
 					};
 				}
 			});
-
-
-
 		}
 	});
-
-
 };
 Activitys.prototype.getbyname = function (username, callback) {
 	MongoClient.connect(this.url, function (err, db) {
@@ -161,17 +140,10 @@ Activitys.prototype.getbyname = function (username, callback) {
 					} else {
 						callback('Not found!!', null);
 					};
-
-
 				}
 			});
-
-
-
 		}
 	});
-
-
 };
 
 Activitys.prototype.getbyid = function (qrcodeid, callback) {
@@ -180,7 +152,6 @@ Activitys.prototype.getbyid = function (qrcodeid, callback) {
 			console.log('Not Connect DB!.' + err);
 			callback(err, null);
 		} else {
-
 			console.log('Connect DB succes.' + qrcodeid);
 			//	var act_id = new ObjectID();
 			hhDb = db.db('hh');
@@ -194,17 +165,10 @@ Activitys.prototype.getbyid = function (qrcodeid, callback) {
 					} else {
 						callback('Not found!!', null);
 					};
-
-
 				}
 			});
-
-
-
 		}
 	});
-
-
 };
 
 Activitys.prototype.addbyname = function (name, callback) {
@@ -226,17 +190,10 @@ Activitys.prototype.addbyname = function (name, callback) {
 					} else {
 						callback('Not found!!', null);
 					};
-
-
 				}
 			});
-
-
-
 		}
 	});
-
-
 };
 
 // Calculate Machine Time
@@ -256,61 +213,70 @@ Activitys.prototype.machinetime = function (docId, callback) {
 					var startTime = [];
 					var lastStartTime = Date;
 					var pauseTime = [];
-					var finishTime = Date;
+					var finishTime = 0;
 					var finalActionTime = Date;
 					var diffTimeArr = [];
 					var machineTime = Date;
 
-					result.activity.forEach(element => {
-						if (element.act_event === 'START') {
-							startTime.push(element.act_time);
-						}
-						if (element.act_event === 'PAUSE') {
-							pauseTime.push(element.act_time);
-						}
-						if (element.act_event === 'FINISH') {
-							finishTime = element.act_time;
-						}
-					});
-
-					if ((pauseTime === undefined || pauseTime.length == 0)) {
-						console.log('***No Pause Event***');
-						machineTime = finishTime - startTime.pop();
-						console.log('Final Machine Time: ', machineTime);
-						console.log('==================================');
-
-						// Update Mongo by using machineTime
-						// Do stuff here...
-						hhDbUpdate = db.db('hh');
-						hhDbUpdate.collection("activitys").updateOne({ _id: new ObjectID(docId) }, { $set: { total_time: machineTime } }, function (err3, res) {
-							if (err3) throw err3;
-							console.log("Machine total time has been updated at _id:", new ObjectID(docId));							
-						});
-					} else {
-						var diffTimeMap = pauseTime.map(function (item, index) {
-							return item - startTime[index];
+					if (result.activity.length == 0) {
+						console.log('***No activities event to update machine time***');
+					}
+					else {
+						result.activity.forEach(element => {
+							if (element.act_event === 'START') {
+								startTime.push(element.act_time);
+							}
+							if (element.act_event === 'PAUSE') {
+								pauseTime.push(element.act_time);
+							}
+							if (element.act_event === 'FINISH') {
+								finishTime = element.act_time;
+							}
 						});
 
-						console.log('***Has A Pause Event***');
-						diffTimeArr = diffTimeMap;
-						lastStartTime = startTime.splice(-1).pop();
-						finalActionTime = Math.abs(finishTime - lastStartTime);
-						diffTimeArr.push(finalActionTime);
-
-						var machineTime = 0;
-						for (var i = 0; i < diffTimeArr.length; i++) {
-							machineTime += diffTimeArr[i]
+						if (finishTime == 0) {
+							console.log('***This activities have no finish event to update machine time***');
 						}
-						console.log('Final Machine Time: ', machineTime);
-						console.log('==================================');
+						else if ((pauseTime === undefined || pauseTime.length == 0)) {
+							console.log('***No Pause Event***');
+							machineTime = finishTime - startTime.pop();
+							console.log('Final Machine Time: ', machineTime);
+							console.log('==================================');
 
-						// Update Mongo by using machineTime
-						// Do stuff here...
-						hhDbUpdate = db.db('hh');
-						hhDbUpdate.collection("activitys").updateOne({ _id: new ObjectID(docId) }, { $set: { total_time: machineTime } }, function (err3, res) {
-							if (err3) throw err3;
-							console.log("Machine total time has been updated at _id:", new ObjectID(docId));
-						});
+							// Update Mongo by using machineTime
+							// Do stuff here...
+							hhDbUpdate = db.db('hh');
+							hhDbUpdate.collection("activitys").updateOne({ _id: new ObjectID(docId) }, { $set: { total_time: machineTime } }, function (err3, res) {
+								if (err3) throw err3;
+								console.log("Machine total time has been updated at _id:", new ObjectID(docId));
+							});
+						}
+						else {
+							var diffTimeMap = pauseTime.map(function (item, index) {
+								return item - startTime[index];
+							});
+
+							console.log('***Has A Pause Event***');
+							diffTimeArr = diffTimeMap;
+							lastStartTime = startTime.splice(-1).pop();
+							finalActionTime = Math.abs(finishTime - lastStartTime);
+							diffTimeArr.push(finalActionTime);
+
+							var machineTime = 0;
+							for (var i = 0; i < diffTimeArr.length; i++) {
+								machineTime += diffTimeArr[i]
+							}
+							console.log('Final Machine Time: ', machineTime);
+							console.log('==================================');
+
+							// Update Mongo by using machineTime
+							// Do stuff here...
+							hhDbUpdate = db.db('hh');
+							hhDbUpdate.collection("activitys").updateOne({ _id: new ObjectID(docId) }, { $set: { total_time: machineTime } }, function (err3, res) {
+								if (err3) throw err3;
+								console.log("Machine total time has been updated at _id:", new ObjectID(docId));
+							});
+						}
 					}
 					callback(null, result);
 				}
