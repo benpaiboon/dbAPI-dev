@@ -286,4 +286,78 @@ Activitys.prototype.machinetime = function (docId, callback) {
 	});
 };
 
+// Calculate Labor Time
+Activitys.prototype.labortime = function (docId, callback) {
+	MongoClient.connect(this.url, function (err, db) {
+		hhDb = db.db('hh');
+		if (err) {
+			console.log('Not Connect DB!.' + err);
+			callback(err, null);
+		}
+		else {
+			var duplicateId = [];
+			hhDb.collection("labors").find({}).toArray(function (err, result) {
+				if (err) {
+					console.log(err);
+					callback(err, null);
+				}
+				// if (result.length === 0) {
+				// 	console.log('No data in this collection');
+				// 	callback(null, result);
+				// }
+				if (result.length > 0) {
+					result.forEach(element => {
+						if (docId == element._id) {
+							duplicateId.push(element._id);
+							console.log('Error: duplicate _id can not create new doc');
+							callback(null, { err: `Can not create new doc by using duplicate _id: ${docId}` });
+						}
+					});
+				}
+				if (docId != duplicateId.pop()) {
+					hhDb.collection("activitys").findOne({ _id: new ObjectID(docId) }, function (err2, result2) {
+						if (err2) {
+							console.log(err2);
+							callback(err2, null);
+						}
+						else {
+							// Calculate labor time here...
+							var laborObj = {
+								"_id": result2._id,
+								"jobid": result2.jobid,
+								"machineid": result2.machineid,
+								"job": result2.job,
+								"suffix": result2.suffix,
+								"operation": result2.operation,
+								"item": result2.item,
+								"workCenter": result2.workCenter,
+								"userid": result2.userid,
+								"username": result2.username,
+								"starttime": result2.starttime,
+								"endtime": result2.endtime,
+								"current_date": Date.now(),
+								"createdon": Date.now(),
+								"lastmodifiedon": Date.now(),
+							}
+
+							hhDb.collection("labors").insertOne(laborObj, function (err, result3) {
+								if (err) {
+									console.log(err);
+									callback(err, null);
+								} else {
+									if (result3) {
+										console.log(`Add new labor document by _id: ${docId}`);
+									};
+								}
+							});
+
+							callback(null, laborObj);
+						}
+					});
+				}
+			});
+		}
+	});
+};
+
 module.exports = Activitys;

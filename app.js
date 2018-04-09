@@ -460,7 +460,7 @@ app.get('/resetpassword', function (req, res) {
 // Calculate Machine Time
 app.post('/machinetime', (req, res) => {
   // Example path to use this POST Method
-  // http://localhost:27044/machinetime?id=5ab2201fcb713aea2c0d0b66
+  // http://localhost:27044/machinetime?id=5ab4c645ac227bf9545ddf0a
 
   var session = { _id: '1234', username: req.query.username, password: req.query.password, port: req.query.port, listsource: [], error: '' };
 
@@ -474,6 +474,38 @@ app.post('/machinetime', (req, res) => {
       if (db) {
         var allactivity = new Activitys(_session.url);
         allactivity.machinetime(req.query.id, function (err2, allrow) {
+          if (err2) {
+            console.log(err2);
+          } else {
+            // res.send(JSON.stringify(allrow));
+            sender.send(JSON.stringify(allrow))
+            // sender.send(allrow);
+          }
+        });
+      } else {
+
+      }
+    }
+  });
+});
+
+// Calculate Labor Time
+app.post('/labortime', (req, res) => {
+  // Example path to use this POST Method
+  // http://localhost:27044/labortime?id=5ab4c645ac227bf9545ddf0a
+
+  var session = { _id: '1234', username: req.query.username, password: req.query.password, port: req.query.port, listsource: [], error: '' };
+
+  var sender = new Res(res);
+
+  _session = new Sessions(session.username, session.password);
+  _session.conecting(function (err, db) {
+    if (err) {
+      sender.send(JSON.stringify(err));
+    } else {
+      if (db) {
+        var allactivity = new Activitys(_session.url);
+        allactivity.labortime(req.query.id, function (err2, allrow) {
           if (err2) {
             console.log(err2);
           } else {
